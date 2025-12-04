@@ -6,7 +6,7 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());           // Autorise toutes les origines (GitHub Pages compris)
+app.use(cors());           // Autorise toutes les origines (localhost:5173, GitHub Pages, etc.)
 app.use(express.json());   // Pour lire le JSON du body
 
 app.get("/", (req, res) => {
@@ -25,31 +25,29 @@ Tu inventes parfois des citations pseudo-philosophiques.
 Réponds en 2 à 5 phrases maximum.
   `.trim();
 
-  const fullPrompt = `${systemPrompt}\n\nUtilisateur : ${userMessage}\nChat'bruti :`;
-
   try {
-    const hfRes = await fetch(
-      "https://api-inference.huggingface.co/models/microsoft/Phi-3-mini-128k-instruct",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.HF_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          inputs: fullPrompt,
-          parameters: {
-            max_new_tokens: 200,
-            temperature: 0.9,
-            top_p: 0.95,
-          },
-        }),
-      }
-    );
+    const API_URL = "https://router.huggingface.co/v1/chat/completions";
+
+    const hfRes = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.HF_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "Qwen/Qwen2.5-72B-Instruct", // tu pourras changer de modèle si tu veux
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        max_tokens: 256,
+        temperature: 0.9,
+      }),
+    });
 
     if (!hfRes.ok) {
       const txt = await hfRes.text();
-      console.error("Erreur HF:", txt);
+      console.error("Erreur HF:", hfRes.status, txt);
       return res
         .status(500)
         .json({ reply: "L'IA a fait une crise existentielle. Réessaie plus tard." });
@@ -57,14 +55,11 @@ Réponds en 2 à 5 phrases maximum.
 
     const data = await hfRes.json();
 
-    let generatedText =
-      Array.isArray(data) && data[0]?.generated_text ? data[0].generated_text : "";
+    const reply =
+      data?.choices?.[0]?.message?.content ||
+      "Je ne sais plus quoi dire.";
 
-    if (generatedText.startsWith(fullPrompt)) {
-      generatedText = generatedText.slice(fullPrompt.length);
-    }
-
-    res.json({ reply: generatedText.trim() || "Je ne sais plus quoi dire." });
+    res.json({ reply: reply.trim() });
   } catch (err) {
     console.error("Erreur proxy:", err);
     res.status(500).json({
