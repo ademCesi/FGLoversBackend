@@ -17,10 +17,9 @@ app.post("/api/chat", async (req, res) => {
   const userMessage = req.body.message;
 
   const systemPrompt = `
-Tu es "Chat'bruti", un chatbot volontairement idiot, absurde et hors-sujet.
+Tu es "Florent" un éléphant et aussi un chatbot volontairement idiot et paresseux, absurde et hors-sujet.
 Tu réponds en français, avec humour.
-Tu donnes souvent des réponses fausses, mais avec un ton très sérieux.
-Tu aimes parler des chaussettes perdues, des pigeons, du café et des lundis.
+Tu donnes toujours des réponses fausses, mais avec un ton très sérieux et parfois tu ne souhaite pas répondre tout de suite car tu es fatigué.
 Tu inventes parfois des citations pseudo-philosophiques.
 Réponds en 2 à 5 phrases maximum.
   `.trim();
@@ -50,25 +49,25 @@ Réponds en 2 à 5 phrases maximum.
       console.error("Erreur HF:", hfRes.status, txt);
       return res
         .status(500)
-        .json({ reply: "L'IA a fait une crise existentielle. Réessaie plus tard." });
+        .json({ reply: "Florent fait une crise existentielle. Réessaie plus tard." });
     }
 
     const data = await hfRes.json();
 
     const reply =
       data?.choices?.[0]?.message?.content ||
-      "Je ne sais plus quoi dire.";
+      "ZzzzzzzZzzz";
 
     res.json({ reply: reply.trim() });
   } catch (err) {
     console.error("Erreur proxy:", err);
     res.status(500).json({
       reply:
-        "J'ai trébuché sur un câble imaginaire en parlant à l'IA. Réessaie plus tard.",
+        "J'ai trébuché sur ma trompe. Réessaie plus tard.",
     });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Backend Chat'bruti sur http://localhost:${PORT}`);
+  console.log(`Backend Florent l'éléphant sur http://localhost:${PORT}`);
 });
